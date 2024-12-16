@@ -1,4 +1,5 @@
 import os
+import time
 
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from langchain_text_splitters import RecursiveCharacterTextSplitter
@@ -7,10 +8,10 @@ from langchain.chains.combine_documents import create_stuff_documents_chain
 from langchain_core.prompts import ChatPromptTemplate
 from sentence_transformers import SentenceTransformer
 from pathlib import Path
-
 from utils.dataProcess import createChromaDB
 
 
+startTime = time.time()
 current_directory_path = Path(__file__).parent.resolve()
 path = os.path.join(current_directory_path, "docs")
 retriever = createChromaDB(path,current_directory_path)
@@ -44,7 +45,9 @@ question_answer_chain = create_stuff_documents_chain(llm, prompt)
 # question_answer_chain = create_stuff_documents_chain(llm)
 rag_chain = create_retrieval_chain(retriever, question_answer_chain)
 
-results = rag_chain.invoke({"input": "在车削加工中，切削速度的选择原则是什么？"})
+results = rag_chain.invoke({"input": "我想用原料车一个阶梯轴，需要哪几个工序？将结果组装成一个json"})
 
 # print(results["context"][0].page_content)
 print(results["answer"])
+finalTime = time.time() - startTime
+print("Time:", finalTime)

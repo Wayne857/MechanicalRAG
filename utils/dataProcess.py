@@ -71,8 +71,9 @@ def read_yaml_file_paths(yaml_file_path):
 # 数据库初始化
 def initChromaDB():
     current_directory_path = Path(__file__).parent.resolve()
-    current_directory_path = str(current_directory_path)[:-5] + 'models'+'/all-MiniLM-L6-v2'
-    model_dir = snapshot_download('AI-ModelScope/all-MiniLM-L6-v2', local_dir=current_directory_path)
+    model_dir = str(current_directory_path)[:-5] + 'models'+'/all-MiniLM-L6-v2'
+    if not os.path.exists(model_dir):
+        model_dir = snapshot_download('AI-ModelScope/all-MiniLM-L6-v2', local_dir=model_dir)
     # 创建嵌入函数实例
     embedding_function = SentenceTransformerEmbeddingFunction(model_dir)
     persist_directory = './chroma_db'
