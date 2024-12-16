@@ -18,7 +18,7 @@ retriever = createChromaDB(path,current_directory_path)
 llm = ChatOpenAI(
     model='qwq-32b-preview',
     temperature=0,
-    openai_api_key=os.getenv("DASHSCOPE_API_KEY"),
+    openai_api_key="sk-371c7d0cd5df4f788fff6e0d46863188",
     openai_api_base='https://dashscope.aliyuncs.com/compatible-mode/v1',
 )
 

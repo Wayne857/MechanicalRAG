@@ -1,4 +1,5 @@
 import os
+import uuid
 from uuid import uuid4
 from langchain_core.documents import Document
 import yaml
@@ -43,10 +44,28 @@ def writeYamlFile(path, data):
 
 
 # 读取yaml文件
-def readYaml(path) -> dict:
-    with open(path, 'r', encoding='utf-8') as f:
-        data = yaml.load(f, Loader=yaml.FullLoader)
-    return data
+def read_yaml_file_paths(yaml_file_path):
+    """
+    从指定的YAML文件中读取文件路径，并返回一个路径列表。
+
+    :param yaml_file_path: 包含文件路径的YAML文件的路径
+    :return: 文件路径的列表
+    """
+    file_paths = []
+
+    try:
+        with open(yaml_file_path, 'r', encoding='utf-8') as file:
+            # 逐行读取文件内容
+            for line in file:
+                line = line.strip()
+                if line and not line.endswith('...'):
+                    file_paths.append(line)
+    except FileNotFoundError:
+        print(f"Error: The file {yaml_file_path} was not found.")
+    except Exception as e:
+        print(f"An error occurred while reading the file: {e}")
+
+    return file_paths
 
 
 # 数据库初始化
@@ -74,17 +93,21 @@ def initChromaDB():
 
 
 # 数据库更新
-def addDoc2ChromaDB(vectorstore, doc, fileName):
-    document = Document(
-        page_content=doc,
-        metadata={"source": fileName},
-        id=10
-    )
-    documents = [
-        document,
-    ]
-    uuids = [str(uuid4()) for _ in range(len(documents))]
-    vectorstore.add_documents(documents=documents, ids=uuids)
+def addDoc2ChromaDB(vectorstore, documents, fileName):
+    try:
+        # 如果documents已经是Document对象的列表，我们可以直接使用它们
+        if all(isinstance(doc, Document) for doc in documents):
+            # 生成与documents数量相等的UUID
+            ids = [str(uuid.uuid4()) for _ in range(len(documents))]
+
+            # 添加文档到vectorstore
+            vectorstore.add_documents(documents=documents, ids=ids)
+        else:
+            raise ValueError("The 'documents' parameter should be a list of Document objects.")
+
+    except Exception as e:
+        # 处理可能发生的任何异常
+        print(f"An error occurred: {e}")
 
 
 # 创建数据库
@@ -93,27 +116,21 @@ def createChromaDB(path, current_directory_path):
     vectorstore = None
     fullFilePath = getdir(path)
     loadedFileDir = os.path.join(current_directory_path, "loadedFile.yaml")
-    lodedData = readYaml(loadedFileDir)
+    lodedData = read_yaml_file_paths(loadedFileDir)
     for file_path in fullFilePath:
-        print(file_path)
-        # if file_path in lodedData or not file_path.endswith('.pdf'):
-        #     continue
-        # else:
-        #     loader = PyPDFLoader(file_path)
-        #     docs = loader.load()
-        #     text_splitter = RecursiveCharacterTextSplitter(chunk_size=2000, chunk_overlap=100, add_start_index=True)
-        #     splits = text_splitter.split_documents(docs)
-        #     vectorstore = initChromaDB()
-        #     addDoc2ChromaDB(vectorstore, splits)
-        #     writeYamlFile(loadedFileDir, file_path)
-        fileName = file_path.split('/')[-1]
-        loader = PyPDFLoader(file_path)
-        docs = loader.load()
-        text_splitter = RecursiveCharacterTextSplitter(chunk_size=2000, chunk_overlap=100, add_start_index=True)
-        splits = text_splitter.split_documents(docs)
+        # print(file_path)
         vectorstore = initChromaDB()
-        addDoc2ChromaDB(vectorstore, splits, fileName)
-        writeYamlFile(loadedFileDir, file_path)
+        if file_path in lodedData:
+            continue
+        else:
+            fileName = file_path.split('/')[-1]
+            loader = PyPDFLoader(file_path)
+            docs = loader.load()
+            text_splitter = RecursiveCharacterTextSplitter(chunk_size=2000, chunk_overlap=100, add_start_index=True)
+            splits = text_splitter.split_documents(docs)
+            # vectorstore = initChromaDB()
+            addDoc2ChromaDB(vectorstore, splits, fileName)
+            writeYamlFile(loadedFileDir, file_path)
 
     retriever = vectorstore.as_retriever()
     return retriever
