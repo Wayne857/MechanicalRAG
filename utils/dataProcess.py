@@ -76,7 +76,7 @@ def initChromaDB():
         model_dir = snapshot_download('AI-ModelScope/all-MiniLM-L6-v2', local_dir=model_dir)
     # 创建嵌入函数实例
     embedding_function = SentenceTransformerEmbeddingFunction(model_dir)
-    persist_directory = './chroma_db'
+    persist_directory = str(current_directory_path)[:-5]+'chroma_db'
     if os.path.exists(persist_directory):
         vectorstore = Chroma(
             persist_directory=persist_directory,
