@@ -15,8 +15,9 @@ class workFlow:
         self.AgentNode[AgentName] = Agent(AgentName, llmName)
 
     def addEdge(self, start, end):
-
-        self.AgentNode[start].next = self.AgentNode[end]
+        startAgent = self.AgentNode[start]
+        endAgent = self.AgentNode[end]
+        endAgent.getResponse(startAgent.self.globalMemory)
 
     def run(self):
         for step in self.steps:

@@ -1,6 +1,5 @@
 import os
 from pathlib import Path
-
 import dashscope
 from langchain.chains.combine_documents import create_stuff_documents_chain
 from langchain.chains.retrieval import create_retrieval_chain
@@ -14,6 +13,7 @@ from utils.prompt import Prompt
 class Agent:
 
     def __init__(self, AgentName, llmName):
+        self.getGraphResponse = []
         self.initAgentPrompt = None
         self.llm = None
         self.llmName = llmName  #llmName是模型的型号
@@ -26,8 +26,9 @@ class Agent:
     def getPrompt(self):
         self.initAgentPrompt = Prompt.prompt[self.AgentName]
 
-    def getMessage(self):
+    def getMessage(self, question):
         self.getPrompt()
+
         if self.img:
             imgPackeg = [{"image": singleImg} for singleImg in self.img]
             text = {"text": self.promptMix(self.initAgentPrompt)}
@@ -41,11 +42,12 @@ class Agent:
             messages[0]["content"].extend(imgPackeg)
             messages[0]["content"].append(text)
         else:
+            docMessage = "文档查询结果：" + self.searchDoc("查询与" + question + "有关的内容") + "文档查询结果结束"
             messages = [
                 {
                     "role": "user",
                     "content": [
-                        {"text": self.promptMix(self.initAgentPrompt)}
+                        {"text": docMessage + self.promptMix(self.initAgentPrompt)}
                     ]
                 }
             ]
@@ -56,10 +58,11 @@ class Agent:
         return self.promptFull
 
     def getResponse(self, question):
-        messages = self.getMessage()
+
+        messages = self.getMessage(question)
         # print([element["text"] for element in messages[0]["content"] if "text" in element][0])
         # print(text_content))
-        # print(messages)
+        print(messages)
 
         if not self.img:
             messages[0]["content"][0]["text"] += question
@@ -68,7 +71,7 @@ class Agent:
                 model=self.llmName,
                 messages=messages
             )
-            getGraphResponse = self.llm["output"]['text'].split('\n')
+            self.getGraphResponse = self.llm["output"]['text'].split('\n')
         else:
             keytext = [element["text"] for element in messages[0]["content"] if "text" in element][0]
             keytext += question
@@ -80,16 +83,20 @@ class Agent:
                 model=self.llmName,
                 messages=messages
             )
-            getGraphResponse = self.llm["output"]['choices'][0]['message']['content'][0]['text'].split('\n')
+            self.getGraphResponse = self.llm["output"]['choices'][0]['message']['content'][0]['text'].split('\n')
 
-        self.globalMemory = ''.join(getGraphResponse)
-        # print(''.join(getGraphResponse))
-        return ''.join(getGraphResponse)
+        self.globalMemory = ''.join(self.getGraphResponse)
+        # print(''.join(self.getGraphResponse))
+        return self.getGraphResponse
+
+    def printResponse(self):
+        for element in self.getGraphResponse:
+            print(element)
 
     def searchDoc(self, question):
         # startTime = time.time()
         # current_directory_path = Path(__file__).parent.resolve()[:-5]+'PDF'
-        current_directory_path = str(Path(__file__).parent.resolve())[:-5]+'PDF'
+        current_directory_path = str(Path(__file__).parent.resolve())[:-5] + 'PDF'
         print(str(current_directory_path))
         path = os.path.join(current_directory_path, "docs")
         retriever = createChromaDB(path, current_directory_path)
