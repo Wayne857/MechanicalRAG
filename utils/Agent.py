@@ -21,7 +21,7 @@ class Agent:
         self.promptFull = " "
         self.globalMemory = " "
         self.img = None
-        self.api_key = read_yaml_file_paths("../config/config.yaml")[0]
+        self.api_key = read_yaml_file_paths("./config/config.yaml")[0]
 
     def getPrompt(self):
         self.initAgentPrompt = Prompt.prompt[self.AgentName]
@@ -62,7 +62,7 @@ class Agent:
         messages = self.getMessage(question)
         # print([element["text"] for element in messages[0]["content"] if "text" in element][0])
         # print(text_content))
-        print(messages)
+        # print(messages)
 
         if not self.img:
             messages[0]["content"][0]["text"] += question
@@ -97,7 +97,7 @@ class Agent:
         # startTime = time.time()
         # current_directory_path = Path(__file__).parent.resolve()[:-5]+'PDF'
         current_directory_path = str(Path(__file__).parent.resolve())[:-5] + 'PDF'
-        print(str(current_directory_path))
+        # print(str(current_directory_path))
         path = os.path.join(current_directory_path, "docs")
         retriever = createChromaDB(path, current_directory_path)
 
